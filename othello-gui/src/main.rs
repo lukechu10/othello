@@ -195,20 +195,28 @@ fn Cell(row: u8, col: u8, game: Signal<Game>, onclick: impl Fn(u8, u8) + 'static
         }
     };
 
-    let class = move || match cell_state() {
-        Cell::Empty => {
-            if is_valid_play() {
-                "bg-green-500"
-            } else {
-                "bg-green-700"
-            }
+    let cell_color = move || {
+        if is_valid_play() {
+            "bg-green-500"
+        } else {
+            "bg-green-700"
         }
-        Cell::Black => "bg-slate-600",
-        Cell::White => "bg-gray-200",
     };
 
     view! {
-        button(class=format!("w-12 h-12 border {}", class()), on:click=onclick, disabled=cell_state() != Cell::Empty) {}
+        button(class=format!("w-12 h-12 {} border", cell_color()), on:click=onclick, disabled=cell_state() != Cell::Empty) {
+            (match cell_state() {
+                Cell::Empty => view! {
+                    div(class="w-8 h-8 m-2 inline-block") {}
+                },
+                Cell::Black => view! {
+                    div(class="w-8 h-8 rounded-full bg-slate-800 m-2 inline-block") {}
+                },
+                Cell::White => view! {
+                    div(class="w-8 h-8 rounded-full bg-slate-100 m-2 inline-block") {}
+                }
+            })
+        }
     }
 }
 
