@@ -1,7 +1,7 @@
 use crate::othello::{Game, Play, Player};
 use rand::prelude::*;
 use std::cmp::Ordering;
-use std::time::Instant;
+use web_time::Instant;
 
 /// Represents a node in the MCTS Tree.
 pub struct Node {
@@ -57,6 +57,7 @@ pub struct Mcts {
     arena: Vec<Node>,
     /// The index of the root `Node`.
     root_node_index: usize,
+    rng: ThreadRng,
 }
 
 impl Mcts {
@@ -68,6 +69,7 @@ impl Mcts {
         Mcts {
             arena,
             root_node_index: 0,
+            rng: rand::rng(),
         }
     }
 
@@ -94,7 +96,7 @@ impl Mcts {
 
     /// Clones `state` and mutates the game with `play`.
     fn advance_state(state: &Game, play: Play) -> Game {
-        let mut tmp_state = state.clone();
+        let mut tmp_state = *state;
         tmp_state.make_play(play);
 
         tmp_state
@@ -164,15 +166,13 @@ impl Mcts {
     }
 
     /// ### Monte Carlo Tree Search - step 3.
-    fn simulate(&self, index: usize) -> Player {
-        let mut state = self.get_node(index).state.clone();
-
-        let mut rng = rand::rng();
+    fn simulate(&mut self, index: usize) -> Player {
+        let mut state = self.get_node(index).state;
 
         while state.game_state() == Player::InProgress {
             let plays = state.generate_plays();
             // select random move
-            let rand_index = rng.random_range(0..plays.len());
+            let rand_index = self.rng.random_range(0..plays.len());
             let play = plays[rand_index];
 
             state.make_play(play);

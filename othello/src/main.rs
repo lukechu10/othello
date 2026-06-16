@@ -1,5 +1,5 @@
-use othello_ai::mcts::*;
-use othello_ai::othello::*;
+use othello::mcts::*;
+use othello::othello::*;
 use rand::RngExt;
 
 fn main() {

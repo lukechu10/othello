@@ -23,7 +23,7 @@ pub enum Player {
 }
 
 /// Represents an Othello game board.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Game {
     pub black_pieces: Bitfield,
     pub white_pieces: Bitfield,
