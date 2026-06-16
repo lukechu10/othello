@@ -124,8 +124,7 @@ impl Game {
     pub fn generate_plays(&self) -> Vec<Play> {
         let mut bitfield = self.generate_plays_bitfield();
 
-        let mut vec = Vec::new();
-        vec.reserve(20);
+        let mut vec = Vec::with_capacity(20);
         let mut index = 0;
 
         while bitfield.0 != 0 {

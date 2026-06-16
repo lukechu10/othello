@@ -1,6 +1,6 @@
 use othello_ai::mcts::*;
 use othello_ai::othello::*;
-use rand::{thread_rng, Rng};
+use rand::RngExt;
 
 fn main() {
     println!("Hello, world!");
@@ -18,8 +18,8 @@ fn main() {
         } else {
             // random ai
             let plays = game.generate_plays();
-            let mut rng = thread_rng();
-            let rand_index = rng.gen_range(0..plays.len());
+            let mut rng = rand::rng();
+            let rand_index = rng.random_range(0..plays.len());
 
             plays[rand_index]
         };

@@ -25,7 +25,7 @@ impl Node {
         let mut plays = state.generate_plays();
 
         // shuffle plays
-        plays.shuffle(&mut thread_rng());
+        plays.shuffle(&mut rand::rng());
 
         Self {
             parent,
@@ -167,12 +167,12 @@ impl Mcts {
     fn simulate(&self, index: usize) -> Player {
         let mut state = self.get_node(index).state.clone();
 
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
 
         while state.game_state() == Player::InProgress {
             let plays = state.generate_plays();
             // select random move
-            let rand_index = rng.gen_range(0..plays.len());
+            let rand_index = rng.random_range(0..plays.len());
             let play = plays[rand_index];
 
             state.make_play(play);
