@@ -1,5 +1,6 @@
 use crate::{
     agents::Agent,
+    agents::minimax,
     othello::{Game, Play, Player},
 };
 use rand::prelude::*;
@@ -175,10 +176,13 @@ impl Mcts {
         let mut state = self.get_node(index).state;
 
         while state.game_state() == Player::InProgress {
-            let plays = state.generate_plays();
-            // select random move
-            let rand_index = self.rng.random_range(0..plays.len());
-            let play = plays[rand_index];
+            const MINIMAX_DEPTH: u32 = 1;
+            // let plays = state.generate_plays();
+            // // select random move
+            // let rand_index = self.rng.random_range(0..plays.len());
+            // let play = plays[rand_index];
+            let play =
+                minimax::minimax(state, MINIMAX_DEPTH, state.player_to_move == Player::Black).0;
 
             state.make_play(play);
         }

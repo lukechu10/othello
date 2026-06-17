@@ -1,7 +1,10 @@
 use crate::othello::{Game, Play, Player};
 
 pub mod mcts;
+pub mod mcts_eval;
+pub mod mcts_mr;
 pub mod minimax;
+pub mod minimax_better_eval;
 pub mod random;
 
 pub trait Agent {

@@ -174,16 +174,33 @@ impl Mcts {
     fn simulate(&mut self, index: usize) -> Player {
         let mut state = self.get_node(index).state;
 
-        while state.game_state() == Player::InProgress {
+        let mut count = 0;
+        while state.game_state() == Player::InProgress && count < 3 {
             let plays = state.generate_plays();
             // select random move
             let rand_index = self.rng.random_range(0..plays.len());
             let play = plays[rand_index];
 
             state.make_play(play);
+            count += 1;
         }
 
-        state.game_state()
+        match state.game_state() {
+            Player::InProgress => {
+                // if the game is still in progress after 10 moves, we can use a heuristic to determine the winner
+                let black_count = state.black_pieces.0.count_ones();
+                let white_count = state.white_pieces.0.count_ones();
+
+                if black_count > white_count {
+                    Player::Black
+                } else if white_count > black_count {
+                    Player::White
+                } else {
+                    Player::Tie
+                }
+            }
+            winner => winner,
+        }
     }
 
     /// ### Monte Carlo Tree Search - step 4.

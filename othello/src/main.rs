@@ -1,6 +1,7 @@
-use othello::agents::{Matchup, mcts, minimax, random};
+use othello::agents::*;
 use othello::othello::*;
 
+#[allow(unused_variables)]
 fn main() {
     let time_budget_ms = 50;
 
@@ -12,14 +13,37 @@ fn main() {
         max_iterations: 300,
     };
     let mcts_hard = mcts::MctsAgent {
-        max_iterations: 3000,
+        max_iterations: 10000,
     };
-    let minimax_easy = minimax::MinimaxAgent { max_depth: 4 };
+    let mcts_eval_easy = mcts_eval::MctsAgent {
+        max_iterations: 300,
+    };
+    let mcts_eval_hard = mcts_eval::MctsAgent {
+        max_iterations: 100000,
+    };
+
+    let minimax_easy = minimax::MinimaxAgent { max_depth: 5 };
     let minimax_hard = minimax::MinimaxAgent { max_depth: 7 };
+
+    let mcts_mr_easy = mcts_mr::MctsAgent {
+        max_iterations: 300,
+    };
+    let mcts_mr_hard = mcts_mr::MctsAgent {
+        max_iterations: 10000,
+    };
+
     let random = random::RandomAgent;
 
     for _ in 0..100 {
-        let winner = Matchup::new(mcts_hard, minimax_hard).play_with_time_budget(time_budget_ms);
+        let winner = Matchup::new(
+            // random,
+            // mcts_easy,
+            // mcts_hard,
+            // minimax::MinimaxAgent { max_depth: 5 },
+            minimax_better_eval::MinimaxAgent { max_depth: 7 },
+            minimax_better_eval::MinimaxAgent { max_depth: 7 },
+        )
+        .play_with_time_budget(time_budget_ms);
         print!(
             "{}",
             match winner {

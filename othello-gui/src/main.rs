@@ -1,4 +1,4 @@
-use othello::mcts::Mcts;
+use othello::agents::mcts::Mcts;
 use othello::othello::{Cell, Game, Play, Player};
 use rand::seq::IndexedRandom;
 use sycamore::prelude::*;
@@ -16,7 +16,7 @@ fn get_move_for_agent(agent: Agent, game: Game) -> Option<Play> {
     match agent {
         Agent::Human => None,
         Agent::Computer(iterations_budget) => {
-            let mut mcts_agent = Mcts::new(game);
+            let mut mcts_agent = Mcts::new(game, iterations_budget);
             let search_res = mcts_agent.run_search_iterations_budget(iterations_budget);
             web_sys::console::log_1(
                 &format!("{} games simulated", search_res.search_iterations).into(),
