@@ -329,14 +329,6 @@ fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
         hovered_cell.set(None);
     };
 
-    let cell_color = move || {
-        if is_valid_play() {
-            "bg-green-600"
-        } else {
-            "bg-green-700"
-        }
-    };
-
     let rounded = move || {
         if row == 0 && col == 0 {
             "rounded-tl-lg"
@@ -351,25 +343,26 @@ fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
         }
     };
 
-    let disc_class = move || match (cell_state(), ghost_cell_state()) {
-        (Cell::Black, Some(Cell::White)) => "bg-red-950",
-        (Cell::White, Some(Cell::Black)) => "bg-red-200",
-        (Cell::Black, _) => "bg-slate-800",
-        (Cell::White, _) => "bg-slate-100",
-        (Cell::Empty, Some(Cell::Black)) => "bg-slate-800 opacity-30",
-        (Cell::Empty, Some(Cell::White)) => "bg-slate-100 opacity-30",
+    let disc_class = move || match (cell_state(), ghost_cell_state(), is_valid_play()) {
+        (Cell::Black, Some(Cell::White), _) => "bg-red-950",
+        (Cell::White, Some(Cell::Black), _) => "bg-red-200",
+        (Cell::Black, _, _) => "bg-slate-800",
+        (Cell::White, _, _) => "bg-slate-100",
+        (Cell::Empty, Some(Cell::Black), _) => "bg-slate-800 opacity-30",
+        (Cell::Empty, Some(Cell::White), _) => "bg-slate-100 opacity-30",
+        (Cell::Empty, _, true) => "opacity-20 border-2",
         _ => "",
     };
 
     view! {
         button(
-            class=format!("w-16 h-16 {} border-2 border-green-600 {} transition-colors", cell_color(), rounded()),
+            class=format!("w-16 h-16 bg-green-700 border-2 border-green-600 {} transition-colors", rounded()),
             on:click=onclick,
             on:mouseover=onmouseover,
             on:mouseout=onmouseout,
             disabled=cell_state() != Cell::Empty
         ) {
-            div(class=format!("w-10 h-10 rounded-full {} m-3 inline-block transition-colors", disc_class())) {}
+            div(class=format!("w-10 h-10 rounded-full {} m-3 inline-block border-green-300 transition-colors", disc_class())) {}
         }
     }
 }
