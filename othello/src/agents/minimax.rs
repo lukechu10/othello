@@ -32,8 +32,8 @@ impl Agent for MinimaxAgent {
 
 fn evaluate_game(game: &Game) -> i32 {
     match game.game_state() {
-        Player::Black => 1000,
-        Player::White => -1000,
+        Player::Black => 1000000,
+        Player::White => -1000000,
         Player::Tie => 0,
         _ => {
             let black_count = game.black_pieces.0.count_ones() as i32;
