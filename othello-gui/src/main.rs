@@ -281,37 +281,25 @@ fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
         }
     };
 
+    let disc_class = move || match (cell_state(), ghost_cell_state()) {
+        (Cell::Black, Some(Cell::White)) => "bg-red-950",
+        (Cell::White, Some(Cell::Black)) => "bg-red-200",
+        (Cell::Black, _) => "bg-slate-800",
+        (Cell::White, _) => "bg-slate-100",
+        (Cell::Empty, Some(Cell::Black)) => "bg-slate-800 opacity-30",
+        (Cell::Empty, Some(Cell::White)) => "bg-slate-100 opacity-30",
+        _ => "",
+    };
+
     view! {
         button(
-            class=format!("w-16 h-16 {} border border-green-900 {}", cell_color(), rounded()),
+            class=format!("w-16 h-16 {} border border-green-900 {} transition-colors", cell_color(), rounded()),
             on:click=onclick,
             on:mouseover=onmouseover,
             on:mouseout=onmouseout,
             disabled=cell_state() != Cell::Empty
         ) {
-            (match (cell_state(), ghost_cell_state()) {
-                (Cell::Black, Some(Cell::White)) => view! {
-                    div(class="w-10 h-10 rounded-full bg-red-950 m-3 inline-block") {}
-                },
-                (Cell::White, Some(Cell::Black)) => view! {
-                    div(class="w-10 h-10 rounded-full bg-red-200 m-3 inline-block") {}
-                },
-                (Cell::Black, _) => view! {
-                    div(class="w-10 h-10 rounded-full bg-slate-800 m-3 inline-block") {}
-                },
-                (Cell::White, _) => view! {
-                    div(class="w-10 h-10 rounded-full bg-slate-100 m-3 inline-block") {}
-                },
-                (Cell::Empty, Some(Cell::Black)) => view! {
-                    div(class="w-10 h-10 rounded-full bg-slate-800 opacity-30 m-3 inline-block") {}
-                },
-                (Cell::Empty, Some(Cell::White)) => view! {
-                    div(class="w-10 h-10 rounded-full bg-slate-100 opacity-30 m-3 inline-block") {}
-                },
-                _ => view! {
-                    div(class="w-10 h-10 m-3 inline-block") {}
-                },
-            })
+            div(class=format!("w-10 h-10 rounded-full {} m-3 inline-block transition-colors", disc_class())) {}
         }
     }
 }
