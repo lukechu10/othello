@@ -10,8 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - run: >
-          rustup toolchain stable
+      - run: |
+          rustup default stable
           rustup target add wasm32-unknown-unknown
 
       - name: install trunk
