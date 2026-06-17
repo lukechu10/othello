@@ -3,5 +3,8 @@ resolver = "3"
 
 members = ["othello", "othello-gui"]
 
+[profile.bench]
+debug = true
+
 [profile.release]
 debug = true

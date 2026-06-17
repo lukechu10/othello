@@ -12,7 +12,14 @@ enum Agent {
 
 fn get_move_for_agent(agent: Agent, game: Game) -> Option<Play> {
     match agent {
-        Agent::Human => None,
+        Agent::Human => {
+            // If the only move is to pass, then we can automatically pass for the human player.
+            if game.generate_plays() == vec![Play(64)] {
+                Some(Play(64))
+            } else {
+                None
+            }
+        }
         Agent::Computer(agent) => Some(agent().best_move(game)),
     }
 }

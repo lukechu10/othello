@@ -4,14 +4,14 @@ pub struct Play(pub u8);
 
 impl Play {
     /// Create a new `Play` with specified `row` and `col`.
-    pub fn new(row: u8, col: u8) -> Self {
+    pub const fn new(row: u8, col: u8) -> Self {
         debug_assert!(row < 8);
         debug_assert!(col < 8);
 
         Self(row * 8 + col)
     }
 
-    pub fn coords(&self) -> Option<(u8, u8)> {
+    pub const fn coords(&self) -> Option<(u8, u8)> {
         if self.0 < 64 {
             Some((self.0 / 8, self.0 % 8))
         } else {

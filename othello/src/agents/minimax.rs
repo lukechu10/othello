@@ -80,7 +80,7 @@ pub fn minimax(game: Game, depth: u32) -> (Play, i32) {
         }
 
         let mut plays = std::mem::take(&mut plays_bufs[depth as usize]);
-        assert_eq!(plays.capacity(), 32);
+        assert_eq!(plays.capacity(), 64);
         plays.clear();
         game.generate_plays_in_buf(&mut plays);
         let mut best_play = Play(0);
@@ -130,7 +130,7 @@ pub fn minimax(game: Game, depth: u32) -> (Play, i32) {
         (best_play, best_score)
     }
 
-    let mut plays_bufs: Vec<Vec<Play>> = (0..=depth).map(|_| Vec::with_capacity(32)).collect();
+    let mut plays_bufs: Vec<Vec<Play>> = (0..=depth).map(|_| Vec::with_capacity(64)).collect();
 
     alphabeta(game, depth, i32::MIN, i32::MAX, &mut plays_bufs)
 }
