@@ -62,7 +62,6 @@ pub struct Mcts {
     root_node_index: usize,
     /// The maximum number of iterations to run the search for.
     max_iterations: u32,
-    rng: ThreadRng,
 }
 
 impl Mcts {
@@ -74,7 +73,6 @@ impl Mcts {
         Mcts {
             arena,
             root_node_index: 0,
-            rng: rand::rng(),
             max_iterations,
         }
     }
