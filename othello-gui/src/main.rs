@@ -70,9 +70,7 @@ fn App() -> View {
     fn _run_player_turn(game: Signal<Game>, player_1: Signal<Agent>, player_2: Signal<Agent>) {
         let mut game_value = game.get();
 
-        if game_value.game_state() != Player::InProgress
-            || game.get().generate_plays() == vec![Play(64)]
-        {
+        if game_value.game_state() != Player::InProgress {
             return;
         }
 
@@ -118,7 +116,7 @@ fn App() -> View {
     });
 
     view! {
-        div(class="mx-auto max-w-prose") {
+        div(class="mx-auto my-4 max-w-prose") {
             h1(class="text-2xl font-bold") { "Othello" }
 
             h2(class="text-xl font-bold") { "Players" }
@@ -135,11 +133,19 @@ fn App() -> View {
             }
 
             div(class="flex flex-row justify-around my-4") {
-                p {
-                    "Current Player: " (format!("{:?}", game.get().player_to_move))
-                }
-                p {
-                    "Game State: " (format!("{:?}", game.get().game_state()))
+                p(class="font-bold") {
+                    (if game.get().game_state() != Player::InProgress {
+                        match game.get().game_state() {
+                            Player::Black => view! { "Black wins!" },
+                            Player::White => view! { "White wins!" },
+                            Player::Tie => view! { "It's a tie!" },
+                            _ => unreachable!(),
+                        }
+                    }  else {
+                        view! {
+                            (format!("{:?}'s turn", game.get().player_to_move))
+                        }
+                    })
                 }
             }
 
@@ -181,7 +187,7 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str) -> View {
                     "Computer (Easy)" => Agent::Computer(10),
                     "Computer (Medium)" => Agent::Computer(100),
                     "Computer (Hard)" => Agent::Computer(1000),
-                    "Random" => Agent::Random,
+                    "Computer (Random)" => Agent::Random,
                     _ => Agent::Human,
                 });
             }) {
@@ -189,7 +195,7 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str) -> View {
                 option(value="Computer (Easy)") { "Computer (Easy)" }
                 option(value="Computer (Medium)") { "Computer (Medium)" }
                 option(value="Computer (Hard)") { "Computer (Hard)" }
-                option(value="Random") { "Random" }
+                option(value="Computer (Random)") { "Computer (Random)" }
             }
         }
     }
