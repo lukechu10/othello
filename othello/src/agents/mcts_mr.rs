@@ -181,8 +181,7 @@ impl Mcts {
             // // select random move
             // let rand_index = self.rng.random_range(0..plays.len());
             // let play = plays[rand_index];
-            let play =
-                minimax::minimax(state, MINIMAX_DEPTH, state.player_to_move == Player::Black).0;
+            let play = minimax::minimax(state, MINIMAX_DEPTH).0;
 
             state.make_play(play);
         }
@@ -296,14 +295,14 @@ pub struct MctsAgent {
 }
 
 impl Agent for MctsAgent {
-    fn best_move(&mut self, game: Game) -> Play {
+    fn best_move(&self, game: Game) -> Play {
         let mut mcts = Mcts::new(game, self.max_iterations);
         mcts.run_search_iterations_budget(self.max_iterations);
 
         mcts.best_play()
     }
 
-    fn best_move_with_time_budget(&mut self, game: Game, time_budget_ms: u64) -> Play {
+    fn best_move_with_time_budget(&self, game: Game, time_budget_ms: u64) -> Play {
         let mut mcts = Mcts::new(game, self.max_iterations);
         mcts.run_search_time_budget(time_budget_ms as u128);
 

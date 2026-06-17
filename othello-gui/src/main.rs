@@ -1,35 +1,53 @@
-use othello::agents::mcts::Mcts;
+use othello::agents::*;
 use othello::othello::{Cell, Game, Play, Player};
-use rand::seq::IndexedRandom;
 use sycamore::prelude::*;
 use sycamore::web::wasm_bindgen::prelude::*;
 use web_sys::Event;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy)]
 enum Agent {
     Human,
-    Computer(u32),
-    Random,
+    Computer(fn() -> Box<dyn othello::agents::Agent>),
 }
 
 fn get_move_for_agent(agent: Agent, game: Game) -> Option<Play> {
     match agent {
         Agent::Human => None,
-        Agent::Computer(iterations_budget) => {
-            let mut mcts_agent = Mcts::new(game, iterations_budget);
-            let search_res = mcts_agent.run_search_iterations_budget(iterations_budget);
-            web_sys::console::log_1(
-                &format!("{} games simulated", search_res.search_iterations).into(),
-            );
-
-            Some(mcts_agent.best_play())
-        }
-        Agent::Random => {
-            let plays = game.generate_plays();
-            plays.choose(&mut rand::rng()).copied()
-        }
+        Agent::Computer(agent) => Some(agent().best_move(game)),
     }
 }
+
+static AGENTS: &[(&str, Agent)] = &[
+    ("Human", Agent::Human),
+    (
+        "Computer (Easy)",
+        Agent::Computer(|| {
+            Box::new(mcts::MctsAgent {
+                max_iterations: 500,
+            })
+        }),
+    ),
+    (
+        "Computer (Medium)",
+        Agent::Computer(|| {
+            Box::new(mcts::MctsAgent {
+                max_iterations: 1000,
+            })
+        }),
+    ),
+    (
+        "Computer (Hard)",
+        Agent::Computer(|| {
+            Box::new(mcts::MctsAgent {
+                max_iterations: 10000,
+            })
+        }),
+    ),
+    (
+        "Computer (Random)",
+        Agent::Computer(|| Box::new(random::RandomAgent)),
+    ),
+];
 
 /// Context for the application state.
 #[derive(Clone, Copy)]
@@ -89,8 +107,8 @@ fn App() -> View {
 
     let game_history = create_signal(Vec::new());
 
-    let player_1 = create_signal(Agent::Human);
-    let player_2 = create_signal(Agent::Computer(1000));
+    let player_1 = create_signal(AGENTS[0].1);
+    let player_2 = create_signal(AGENTS[1].1);
 
     let waiting_for_player_turn = create_signal(true);
 
@@ -127,8 +145,8 @@ fn App() -> View {
         }
 
         let current_player = match game_value.player_to_move {
-            Player::Black => player_1.get(),
-            Player::White => player_2.get(),
+            Player::Black => player_1.get_clone(),
+            Player::White => player_2.get_clone(),
             _ => return,
         };
 
@@ -170,8 +188,8 @@ fn App() -> View {
             h2(class="text-xl font-bold text-center") { "Players" }
             div(class="flex flex-row justify-around my-2 mx-auto max-w-prose") {
                 div {
-                    PlayerSelect(player=player_1, label="Player 1 (Black)", default=player_1.get_untracked())
-                    PlayerSelect(player=player_2, label="Player 2 (White)", default=player_2.get_untracked())
+                    PlayerSelect(player=player_1, label="Player 1 (Black)", options=AGENTS, default=AGENTS[0].0)
+                    PlayerSelect(player=player_2, label="Player 2 (White)", options=AGENTS, default=AGENTS[1].0)
                 }
                 div(class="flex flex-col align-items-center justify-center") {
                     button(class="flex-none rounded px-4 py-2 bg-slate-900 text-white hover:bg-slate-700 transition-colors grow-0", on:click=move |_| {
@@ -257,7 +275,19 @@ fn App() -> View {
 }
 
 #[component(inline_props)]
-fn PlayerSelect(player: Signal<Agent>, label: &'static str, default: Agent) -> View {
+fn PlayerSelect(
+    player: Signal<Agent>,
+    label: &'static str,
+    options: &'static [(&'static str, Agent)],
+    default: &'static str,
+) -> View {
+    let set_agent = move |value: &str| {
+        if let Some((_, agent)) = options.iter().find(|(name, _)| *name == value) {
+            player.set(*agent)
+        }
+    };
+    set_agent(default);
+
     view! {
         div(class="flex flex-col sm:flex-row justify-between my-2") {
             label(class="mr-4") {
@@ -266,20 +296,13 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str, default: Agent) -> V
             }
             select(class="border", on:change=move |e: Event| {
                 let value = e.target().unwrap().unchecked_into::<web_sys::HtmlSelectElement>().value();
-                player.set(match value.as_str() {
-                    "Human" => Agent::Human,
-                    "Computer (Easy)" => Agent::Computer(500),
-                    "Computer (Medium)" => Agent::Computer(1000),
-                    "Computer (Hard)" => Agent::Computer(10000),
-                    "Computer (Random)" => Agent::Random,
-                    _ => Agent::Human,
-                });
+                set_agent(&value);
             }) {
-                option(value="Human", selected=default == Agent::Human) { "Human" }
-                option(value="Computer (Easy)", selected=default == Agent::Computer(500)) { "Computer (Easy)" }
-                option(value="Computer (Medium)", selected=default == Agent::Computer(1000)) { "Computer (Medium)" }
-                option(value="Computer (Hard)", selected=default == Agent::Computer(10000)) { "Computer (Hard)" }
-                option(value="Computer (Random)", selected=default == Agent::Random) { "Computer (Random)" }
+                (options.iter().map(|(name, _)| {
+                    view! {
+                        option(value=*name, selected=default == *name) { (*name) }
+                    }
+                }).collect::<Vec<View>>())
             }
         }
     }

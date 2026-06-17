@@ -4,14 +4,13 @@ pub mod mcts;
 pub mod mcts_eval;
 pub mod mcts_mr;
 pub mod minimax;
-pub mod minimax_better_eval;
 pub mod random;
 
 pub trait Agent {
     /// Returns the best move for the current player given the current game state.
     ///
     /// This method should always complete in some reasonable finite amount of time.
-    fn best_move(&mut self, game: Game) -> Play {
+    fn best_move(&self, game: Game) -> Play {
         self.best_move_with_time_budget(game, u64::MAX)
     }
 
@@ -19,7 +18,7 @@ pub trait Agent {
     ///
     /// This method should always complete in less than `time_budget_ms` milliseconds.
     /// It can run for less time if it finds a good enough move before the time budget is exhausted.
-    fn best_move_with_time_budget(&mut self, game: Game, time_budget_ms: u64) -> Play;
+    fn best_move_with_time_budget(&self, game: Game, time_budget_ms: u64) -> Play;
 }
 
 pub struct Matchup {

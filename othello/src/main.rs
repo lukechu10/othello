@@ -40,8 +40,8 @@ fn main() {
             // mcts_easy,
             // mcts_hard,
             // minimax::MinimaxAgent { max_depth: 5 },
-            minimax_better_eval::MinimaxAgent { max_depth: 7 },
-            minimax_better_eval::MinimaxAgent { max_depth: 7 },
+            minimax::MinimaxAgent { max_depth: 7 },
+            minimax::MinimaxAgent { max_depth: 7 },
         )
         .play_with_time_budget(time_budget_ms);
         print!(
