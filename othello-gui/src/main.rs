@@ -162,16 +162,17 @@ fn App() -> View {
 
             h2(class="text-xl font-bold text-center") { "Players" }
             div(class="flex flex-row justify-around my-2 mx-auto max-w-prose") {
-                PlayerSelect(player=player_1, label="Player 1 (Black):", default=player_1.get_untracked())
-                PlayerSelect(player=player_2, label="Player 2 (White):", default=player_2.get_untracked())
-            }
-
-            div(class="flex flex-row justify-around") {
-                button(class="rounded px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 transition-colors", on:click=move |_| {
-                    game.set(Game::new());
-                    game_history.set(Vec::new());
-                    run_player_turn();
-                }) { "New Game" }
+                div {
+                    PlayerSelect(player=player_1, label="Player 1 (Black)", default=player_1.get_untracked())
+                    PlayerSelect(player=player_2, label="Player 2 (White)", default=player_2.get_untracked())
+                }
+                div(class="flex flex-col align-items-center justify-center") {
+                    button(class="flex-none rounded px-4 py-2 bg-slate-900 text-white hover:bg-slate-700 transition-colors grow-0", on:click=move |_| {
+                        game.set(Game::new());
+                        game_history.set(Vec::new());
+                        run_player_turn();
+                    }) { "New Game" }
+                }
             }
 
             div(class="flex flex-row justify-around my-4") {
@@ -193,13 +194,13 @@ fn App() -> View {
 
             div(class="flex flex-row place-content-center") {
                 GameBoard(onclick=onclick)
-                ul(class="w-40 h-128 overflow-y-auto py-2 px-4") {
+                ul(class="w-40 h-140 overflow-y-auto py-2 px-4 hidden md:block") {
                     Indexed(
                         list=move || game_history.get_clone().into_iter().rev().collect::<Vec<_>>(),
                         view=move |(state, play)| {
                             view! {
                                 li(
-                                    class="cursor-default even:bg-gray-100 hover:even:bg-gray-200 odd:bg-white hover:odd:bg-gray-50",
+                                    class="cursor-default text-nowrap even:bg-gray-100 hover:even:bg-gray-200 odd:bg-white hover:odd:bg-gray-50",
                                     on:mouseover=move |_| {
                                         hovered_history.set(Some((state, play)));
                                     },
@@ -250,8 +251,8 @@ fn App() -> View {
 #[component(inline_props)]
 fn PlayerSelect(player: Signal<Agent>, label: &'static str, default: Agent) -> View {
     view! {
-        div {
-            label {
+        div(class="flex flex-col sm:flex-row justify-between my-2") {
+            label(class="mr-4") {
                 (label)
                 " "
             }
@@ -279,10 +280,10 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str, default: Agent) -> V
 #[component(inline_props)]
 fn GameBoard(onclick: impl Fn(u8, u8) + Copy + 'static) -> View {
     view! {
-        div(class="bg-green-600 px-2 pt-2.5 pb-1 rounded-xl") {
+        div(class="bg-green-600 px-2 pt-2.5 pb-1 rounded-xl scale-60 sm:scale-90 md:scale-100") {
             ((0..8).map(move |row| {
                 view! {
-                    div(class="row -my-0.5") {
+                    div(class="row -my-0.5 text-nowrap") {
                         ((0..8).map(move |col| {
                             view! {
                                 Cell(row=row, col=col,onclick=onclick)
