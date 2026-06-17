@@ -89,7 +89,7 @@ fn App() -> View {
     let game_history = create_signal(Vec::new());
 
     let player_1 = create_signal(Agent::Human);
-    let player_2 = create_signal(Agent::Human);
+    let player_2 = create_signal(Agent::Computer(1000));
 
     let state = AppState {
         game,
@@ -162,8 +162,8 @@ fn App() -> View {
 
             h2(class="text-xl font-bold text-center") { "Players" }
             div(class="flex flex-row justify-around my-2 mx-auto max-w-prose") {
-                PlayerSelect(player=player_1, label="Player 1 (Black):")
-                PlayerSelect(player=player_2, label="Player 2 (White):")
+                PlayerSelect(player=player_1, label="Player 1 (Black):", default=player_1.get_untracked())
+                PlayerSelect(player=player_2, label="Player 2 (White):", default=player_2.get_untracked())
             }
 
             div(class="flex flex-row justify-around") {
@@ -248,7 +248,7 @@ fn App() -> View {
 }
 
 #[component(inline_props)]
-fn PlayerSelect(player: Signal<Agent>, label: &'static str) -> View {
+fn PlayerSelect(player: Signal<Agent>, label: &'static str, default: Agent) -> View {
     view! {
         div {
             label {
@@ -266,11 +266,11 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str) -> View {
                     _ => Agent::Human,
                 });
             }) {
-                option(value="Human", selected=true) { "Human" }
-                option(value="Computer (Easy)") { "Computer (Easy)" }
-                option(value="Computer (Medium)") { "Computer (Medium)" }
-                option(value="Computer (Hard)") { "Computer (Hard)" }
-                option(value="Computer (Random)") { "Computer (Random)" }
+                option(value="Human", selected=default == Agent::Human) { "Human" }
+                option(value="Computer (Easy)", selected=default == Agent::Computer(500)) { "Computer (Easy)" }
+                option(value="Computer (Medium)", selected=default == Agent::Computer(1000)) { "Computer (Medium)" }
+                option(value="Computer (Hard)", selected=default == Agent::Computer(10000)) { "Computer (Hard)" }
+                option(value="Computer (Random)", selected=default == Agent::Random) { "Computer (Random)" }
             }
         }
     }
