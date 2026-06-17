@@ -17,7 +17,7 @@ fn get_move_for_agent(agent: Agent, game: Game) -> Option<Play> {
         Agent::Human => None,
         Agent::Computer(time_budget) => {
             let mut mcts_agent = Mcts::new(game);
-            let search_res = mcts_agent.run_search(time_budget);
+            let search_res = mcts_agent.run_search_time_budget(time_budget);
             web_sys::console::log_1(
                 &format!("{} games simulated", search_res.search_iterations).into(),
             );

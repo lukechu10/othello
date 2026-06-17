@@ -1,30 +1,25 @@
 use othello::mcts::*;
 use othello::othello::*;
-use rand::RngExt;
 
 fn main() {
-    println!("Hello, world!");
     let mut game = Game::new();
 
     println!("{}", game);
     while game.game_state() == Player::InProgress {
         let play = if game.player_to_move == Player::Black {
-            // mcts ai
-            let mut mcts_agent = Mcts::new(game.clone());
-            let search_res = mcts_agent.run_search(1);
-            println!("{} games simulated", search_res.search_iterations);
+            let mut mcts_agent = Mcts::new(game);
+            let search_res = mcts_agent.run_search_time_budget(100);
+            println!("Black: {} games simulated", search_res.search_iterations);
 
             mcts_agent.best_play()
         } else {
-            // random ai
-            let plays = game.generate_plays();
-            let mut rng = rand::rng();
-            let rand_index = rng.random_range(0..plays.len());
+            let mut mcts_agent = Mcts::new(game);
+            let search_res = mcts_agent.run_search_iterations_budget(15000);
+            println!("White: {} games simulated", search_res.search_iterations);
 
-            plays[rand_index]
+            mcts_agent.best_play()
         };
         game.make_play(play);
-        println!("{}", game);
     }
 
     println!("{:?} wins", game.game_state());

@@ -215,7 +215,7 @@ impl Mcts {
     /// Runs Monte Carlo Tree Search
     /// # Arguments
     /// * `time_budget` - the time budget for running the search in `ms`.
-    pub fn run_search(&mut self, time_budget: u128) -> MctsSearchResult {
+    pub fn run_search_time_budget(&mut self, time_budget: u128) -> MctsSearchResult {
         let mut iterations_count = 0;
         let time_start = Instant::now();
 
@@ -235,6 +235,35 @@ impl Mcts {
 
             let duration = time_start.elapsed();
             if duration.as_millis() > time_budget {
+                break;
+            }
+        }
+
+        MctsSearchResult {
+            search_iterations: iterations_count,
+        }
+    }
+
+    /// Runs Monte Carlo Tree Search
+    /// # Arguments
+    /// * `time_budget` - the time budget for running the search in `ms`.
+    pub fn run_search_iterations_budget(&mut self, iterations_budget: u32) -> MctsSearchResult {
+        let mut iterations_count = 0;
+
+        loop {
+            let node_index = self.select(); // step 1
+            if self.get_node(node_index).is_fully_expanded() {
+                // step 2 skip
+                let winner = self.simulate(node_index); // step 3
+                self.backpropagate(node_index, winner); // step 4
+            } else {
+                let expanded_index = self.expand(node_index); // step 2
+                let winner = self.simulate(expanded_index); // step 3
+                self.backpropagate(expanded_index, winner); // step 4
+            }
+
+            iterations_count += 1;
+            if iterations_count >= iterations_budget {
                 break;
             }
         }
