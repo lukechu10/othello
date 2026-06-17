@@ -160,7 +160,7 @@ fn App() -> View {
                     "."
                 }
                 p {
-                    "The AI is implemented using Monte Carlo Tree Search (MCTS). "
+                    "The computer uses the Monte Carlo Tree Search (MCTS) algorithm to evaluate the best move. "
                     "The UI is implemented using the "
                     a(href="https://sycamore.dev", target="_blank", class="text-blue-500 hover:underline") {
                         "Sycamore"
