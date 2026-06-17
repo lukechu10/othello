@@ -31,9 +31,35 @@ fn get_move_for_agent(agent: Agent, game: Game) -> Option<Play> {
     }
 }
 
+/// Context for the application state.
+#[derive(Clone, Copy)]
+struct AppState {
+    game: Signal<Game>,
+    player_1: Signal<Agent>,
+    player_2: Signal<Agent>,
+    ghost_game: ReadSignal<Option<Game>>,
+    hovered_cell: Signal<Option<(u8, u8)>>,
+}
+
 #[component]
 fn App() -> View {
     let game = create_signal(Game::new());
+
+    let hovered_cell = create_signal(None::<(u8, u8)>);
+    let ghost_game = create_memo(move || {
+        if let Some((row, col)) = hovered_cell.get() {
+            let mut ghost_game = game.get();
+            let play = Play::new(row, col);
+
+            if ghost_game.is_valid_play(play) {
+                ghost_game.make_play(play);
+            }
+
+            Some(ghost_game)
+        } else {
+            None
+        }
+    });
 
     let player_1 = create_signal(Agent::Human);
     let player_2 = create_signal(Agent::Human);
@@ -45,7 +71,7 @@ fn App() -> View {
         let mut game_value = game.get();
 
         if game_value.game_state() != Player::InProgress
-            || game.get().generate_plays() == vec![Play::new(8, 8)]
+            || game.get().generate_plays() == vec![Play(64)]
         {
             return;
         }
@@ -83,6 +109,14 @@ fn App() -> View {
         }
     };
 
+    provide_context(AppState {
+        game,
+        player_1,
+        player_2,
+        ghost_game,
+        hovered_cell,
+    });
+
     view! {
         div(class="mx-auto max-w-prose") {
             h1(class="text-2xl font-bold") { "Othello" }
@@ -109,7 +143,7 @@ fn App() -> View {
                 }
             }
 
-            GameBoard(game=game, onclick=onclick)
+            GameBoard(onclick=onclick)
 
             div(class="text-sm text-gray-500 mt-10") {
                 p {
@@ -162,16 +196,16 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str) -> View {
 }
 
 #[component(inline_props)]
-fn GameBoard(game: Signal<Game>, onclick: impl Fn(u8, u8) + Copy + 'static) -> View {
+fn GameBoard(onclick: impl Fn(u8, u8) + Copy + 'static) -> View {
     view! {
         div(class="flex flex-row justify-around") {
             div {
                 ((0..8).map(move |row| {
                     view! {
-                        div(class="row h-12") {
+                        div(class="row h-16") {
                             ((0..8).map(move |col| {
                                 view! {
-                                    Cell(row=row, col=col, game=game, onclick=onclick)
+                                    Cell(row=row, col=col,onclick=onclick)
                                 }
                             }).collect::<Vec<View>>())
                         }
@@ -183,11 +217,24 @@ fn GameBoard(game: Signal<Game>, onclick: impl Fn(u8, u8) + Copy + 'static) -> V
 }
 
 #[component(inline_props)]
-fn Cell(row: u8, col: u8, game: Signal<Game>, onclick: impl Fn(u8, u8) + 'static) -> View {
+fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
+    let AppState {
+        game,
+        ghost_game,
+        hovered_cell,
+        ..
+    } = use_context::<AppState>();
+
     let play = Play::new(row, col);
 
     let cell_state = move || game.get().cell_state(row, col);
     let is_valid_play = move || game.get().is_valid_play(play);
+
+    let ghost_cell_state = move || {
+        ghost_game
+            .get()
+            .map(|ghost_game| ghost_game.cell_state(row, col))
+    };
 
     let onclick = move |_| {
         if cell_state() == Cell::Empty {
@@ -195,26 +242,65 @@ fn Cell(row: u8, col: u8, game: Signal<Game>, onclick: impl Fn(u8, u8) + 'static
         }
     };
 
+    let onmouseover = move |_| {
+        hovered_cell.set(Some((row, col)));
+    };
+    let onmouseout = move |_| {
+        hovered_cell.set(None);
+    };
+
     let cell_color = move || {
         if is_valid_play() {
-            "bg-green-500"
+            "bg-green-600"
         } else {
             "bg-green-700"
         }
     };
 
+    let rounded = move || {
+        if row == 0 && col == 0 {
+            "rounded-tl-lg"
+        } else if row == 0 && col == 7 {
+            "rounded-tr-lg"
+        } else if row == 7 && col == 0 {
+            "rounded-bl-lg"
+        } else if row == 7 && col == 7 {
+            "rounded-br-lg"
+        } else {
+            ""
+        }
+    };
+
     view! {
-        button(class=format!("w-12 h-12 {} border", cell_color()), on:click=onclick, disabled=cell_state() != Cell::Empty) {
-            (match cell_state() {
-                Cell::Empty => view! {
-                    div(class="w-8 h-8 m-2 inline-block") {}
+        button(
+            class=format!("w-16 h-16 {} border border-green-900 {}", cell_color(), rounded()),
+            on:click=onclick,
+            on:mouseover=onmouseover,
+            on:mouseout=onmouseout,
+            disabled=cell_state() != Cell::Empty
+        ) {
+            (match (cell_state(), ghost_cell_state()) {
+                (Cell::Black, Some(Cell::White)) => view! {
+                    div(class="w-10 h-10 rounded-full bg-red-950 m-3 inline-block") {}
                 },
-                Cell::Black => view! {
-                    div(class="w-8 h-8 rounded-full bg-slate-800 m-2 inline-block") {}
+                (Cell::White, Some(Cell::Black)) => view! {
+                    div(class="w-10 h-10 rounded-full bg-red-200 m-3 inline-block") {}
                 },
-                Cell::White => view! {
-                    div(class="w-8 h-8 rounded-full bg-slate-100 m-2 inline-block") {}
-                }
+                (Cell::Black, _) => view! {
+                    div(class="w-10 h-10 rounded-full bg-slate-800 m-3 inline-block") {}
+                },
+                (Cell::White, _) => view! {
+                    div(class="w-10 h-10 rounded-full bg-slate-100 m-3 inline-block") {}
+                },
+                (Cell::Empty, Some(Cell::Black)) => view! {
+                    div(class="w-10 h-10 rounded-full bg-slate-800 opacity-30 m-3 inline-block") {}
+                },
+                (Cell::Empty, Some(Cell::White)) => view! {
+                    div(class="w-10 h-10 rounded-full bg-slate-100 opacity-30 m-3 inline-block") {}
+                },
+                _ => view! {
+                    div(class="w-10 h-10 m-3 inline-block") {}
+                },
             })
         }
     }
