@@ -294,7 +294,10 @@ impl Mcts {
             let child = self.get_node(*child_index);
 
             if child.visits > best_visits {
-                best_play = child.state.previous_move;
+                best_play = child
+                    .state
+                    .compute_previous_move(root_node.state)
+                    .expect("child node should have a previous move");
                 best_visits = child.visits;
             }
         }

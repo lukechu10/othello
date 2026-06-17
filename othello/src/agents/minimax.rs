@@ -59,23 +59,41 @@ fn evaluate_game(game: &Game) -> i32 {
 }
 
 pub fn minimax(game: Game, depth: u32) -> (Play, i32) {
-    fn alphabeta(game: Game, depth: u32, mut alpha: i32, mut beta: i32) -> (Play, i32) {
+    /// Run the minimax algorithm with alpha-beta pruning.
+    ///
+    /// # Params
+    /// - `game`: The current game state.
+    /// - `depth`: The maximum depth to search.
+    /// - `alpha`: The best score that the maximizer currently can guarantee at that level.
+    /// - `beta`: The best score that the minimizer currently can guarantee at that level.
+    /// - `plays_bufs`: A buffer to store the generated plays for each depth level. This prevents repeated allocations and improves performance. The buffer is indexed by depth, where `plays_bufs[depth]` contains the generated plays for that depth level.
+    fn alphabeta(
+        game: Game,
+        depth: u32,
+        mut alpha: i32,
+        mut beta: i32,
+        plays_bufs: &mut [Vec<Play>],
+    ) -> (Play, i32) {
         if depth == 0 || game.game_state() != Player::InProgress {
             let score = evaluate_game(&game);
             return (Play(0), score);
         }
 
-        let plays = game.generate_plays();
+        let mut plays = std::mem::take(&mut plays_bufs[depth as usize]);
+        assert_eq!(plays.capacity(), 32);
+        plays.clear();
+        game.generate_plays_in_buf(&mut plays);
         let mut best_play = Play(0);
+        let mut best_score;
 
         if game.player_to_move == Player::Black {
-            let mut best_score = i32::MIN;
+            best_score = i32::MIN;
 
-            for play in plays {
+            for &play in &plays {
                 let mut next_game = game;
                 next_game.make_play(play);
 
-                let (_child_play, score) = alphabeta(next_game, depth - 1, alpha, beta);
+                let (_child_play, score) = alphabeta(next_game, depth - 1, alpha, beta, plays_bufs);
 
                 if score > best_score {
                     best_score = score;
@@ -87,16 +105,14 @@ pub fn minimax(game: Game, depth: u32) -> (Play, i32) {
                     break; // beta cut-off
                 }
             }
-
-            (best_play, best_score)
         } else {
-            let mut best_score = i32::MAX;
+            best_score = i32::MAX;
 
-            for play in plays {
+            for &play in &plays {
                 let mut next_game = game;
                 next_game.make_play(play);
 
-                let (_child_play, score) = alphabeta(next_game, depth - 1, alpha, beta);
+                let (_child_play, score) = alphabeta(next_game, depth - 1, alpha, beta, plays_bufs);
 
                 if score < best_score {
                     best_score = score;
@@ -108,10 +124,13 @@ pub fn minimax(game: Game, depth: u32) -> (Play, i32) {
                     break; // alpha cut-off
                 }
             }
-
-            (best_play, best_score)
         }
+        // Replace the plays buffer for this depth level back so that it can be reused in future calls.
+        plays_bufs[depth as usize] = plays;
+        (best_play, best_score)
     }
 
-    alphabeta(game, depth, i32::MIN, i32::MAX)
+    let mut plays_bufs: Vec<Vec<Play>> = (0..=depth).map(|_| Vec::with_capacity(32)).collect();
+
+    alphabeta(game, depth, i32::MIN, i32::MAX, &mut plays_bufs)
 }

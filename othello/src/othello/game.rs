@@ -30,7 +30,6 @@ pub struct Game {
 
     /// Next player to move
     pub player_to_move: Player,
-    pub previous_move: Play,
 
     /// Whether the previous player had to skip their turn.
     /// If true and the current player also has no valid moves, the game is over.
@@ -44,7 +43,6 @@ impl Game {
             black_pieces: Bitfield((1 << Play::new(3, 4).0) | (1 << Play::new(4, 3).0)),
             white_pieces: Bitfield((1 << Play::new(3, 3).0) | (1 << Play::new(4, 4).0)),
             player_to_move: Player::Black,
-            previous_move: Play(0),
             skip_turn: false,
         }
     }
@@ -123,30 +121,37 @@ impl Game {
         Bitfield(legal_moves)
     }
 
-    /// Returns a `Vec<Play>` of legal plays.
-    /// # Postcondition
-    /// The returned vector always has a least 1 play. If there are no plays available, the method returns the "skip" play (represented by 64).
-    pub fn generate_plays(&self) -> Vec<Play> {
+    /// Generates legal plays and appends them to the provided buffer.
+    pub fn generate_plays_in_buf(&self, buf: &mut Vec<Play>) {
+        debug_assert!(
+            buf.is_empty(),
+            "buffer should be empty before generating plays"
+        );
         let mut bitfield = self.generate_plays_bitfield();
 
-        let mut vec = Vec::with_capacity(20);
         let mut index = 0;
 
         while bitfield.0 != 0 {
             if bitfield.0 % 2 == 1 {
-                vec.push(Play(index));
+                buf.push(Play(index));
             }
             bitfield.0 >>= 1;
             index += 1;
         }
 
-        if vec.is_empty() {
+        if buf.is_empty() {
             // add "skip" Play
-            vec.push(Play(64)); // overflow
+            buf.push(Play(64)); // overflow
         }
+    }
 
-        debug_assert!(!vec.is_empty());
-        vec
+    /// Returns a `Vec<Play>` of legal plays.
+    /// # Postcondition
+    /// The returned vector always has a least 1 play. If there are no plays available, the method returns the "skip" play (represented by 64).
+    pub fn generate_plays(&self) -> Vec<Play> {
+        let mut buf = Vec::new();
+        self.generate_plays_in_buf(&mut buf);
+        buf
     }
 
     /// Modifies game board and flips opponent disks.
@@ -215,7 +220,6 @@ impl Game {
     /// Mutates the board.
     pub fn make_play(&mut self, play: Play) {
         self.resolve_play(play);
-        self.previous_move = play;
     }
 
     pub fn is_valid_play(&self, play: Play) -> bool {
@@ -272,6 +276,21 @@ impl Game {
                 Ordering::Greater => Player::Black,
             }
         }
+    }
+
+    /// Computes the previous move given the current game state and the previous game state.
+    ///
+    /// If the previous game state is not a valid predecessor of the current game state, returns `None`.
+    pub fn compute_previous_move(&self, prev: Game) -> Option<Play> {
+        let prev_plays = prev.generate_plays();
+        for play in prev_plays {
+            let mut test_game = prev;
+            test_game.make_play(play);
+            if test_game == *self {
+                return Some(play);
+            }
+        }
+        None
     }
 }
 
