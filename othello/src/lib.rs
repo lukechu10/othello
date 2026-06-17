@@ -1,2 +1,2 @@
-pub mod mcts;
+pub mod agents;
 pub mod othello;

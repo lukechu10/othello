@@ -1,25 +1,16 @@
-use othello::mcts::*;
+use othello::agents::{Matchup, mcts::*};
 use othello::othello::*;
 
 fn main() {
     let mut game = Game::new();
 
-    while game.game_state() == Player::InProgress {
-        let play = if game.player_to_move == Player::Black {
-            let mut mcts_agent = Mcts::new(game);
-            let search_res = mcts_agent.run_search_iterations_budget(300);
-            println!("Black: {} games simulated", search_res.search_iterations);
+    let agent_black = MctsAgent {
+        max_iterations: 300,
+    };
+    let agent_white = MctsAgent {
+        max_iterations: 3000,
+    };
 
-            mcts_agent.best_play()
-        } else {
-            let mut mcts_agent = Mcts::new(game);
-            let search_res = mcts_agent.run_search_iterations_budget(3000);
-            println!("White: {} games simulated", search_res.search_iterations);
-
-            mcts_agent.best_play()
-        };
-        game.make_play(play);
-    }
-
-    println!("{:?} wins", game.game_state());
+    let winner = Matchup::new(agent_black, agent_white).play();
+    println!("{:?} wins", winner);
 }

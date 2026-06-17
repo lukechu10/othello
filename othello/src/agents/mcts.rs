@@ -1,4 +1,7 @@
-use crate::othello::{Game, Play, Player};
+use crate::{
+    agents::Agent,
+    othello::{Game, Play, Player},
+};
 use rand::prelude::*;
 use web_time::Instant;
 
@@ -56,11 +59,13 @@ pub struct Mcts {
     arena: Vec<Node>,
     /// The index of the root `Node`.
     root_node_index: usize,
+    /// The maximum number of iterations to run the search for.
+    max_iterations: u32,
     rng: ThreadRng,
 }
 
 impl Mcts {
-    pub fn new(state: Game) -> Self {
+    pub fn new(state: Game, max_iterations: u32) -> Self {
         let mut arena = Vec::new();
         let node = Node::new(state, None);
         arena.push(node);
@@ -69,6 +74,7 @@ impl Mcts {
             arena,
             root_node_index: 0,
             rng: rand::rng(),
+            max_iterations,
         }
     }
 
@@ -218,7 +224,7 @@ impl Mcts {
             iterations_count += 1;
 
             let duration = time_start.elapsed();
-            if duration.as_millis() > time_budget {
+            if duration.as_millis() > time_budget || iterations_count >= self.max_iterations {
                 break;
             }
         }
@@ -277,5 +283,27 @@ impl Mcts {
         }
 
         best_play
+    }
+}
+
+pub struct MctsAgent {
+    pub max_iterations: u32,
+}
+
+impl Agent for MctsAgent {
+    fn best_move(&mut self, game: Game) -> Play {
+        let mut mcts = Mcts::new(game, self.max_iterations);
+        let search_res = mcts.run_search_iterations_budget(self.max_iterations);
+        println!("MCTS: {} games simulated", search_res.search_iterations);
+
+        mcts.best_play()
+    }
+
+    fn best_move_with_time_budget(&mut self, game: Game, time_budget_ms: u64) -> Play {
+        let mut mcts = Mcts::new(game, self.max_iterations);
+        let search_res = mcts.run_search_time_budget(time_budget_ms as u128);
+        println!("MCTS: {} games simulated", search_res.search_iterations);
+
+        mcts.best_play()
     }
 }
