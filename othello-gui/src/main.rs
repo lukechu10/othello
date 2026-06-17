@@ -34,18 +34,38 @@ fn get_move_for_agent(agent: Agent, game: Game) -> Option<Play> {
 /// Context for the application state.
 #[derive(Clone, Copy)]
 struct AppState {
+    /// The actual game state.
     game: Signal<Game>,
+    /// The game state displayed on the board.
+    /// This is used to show game history.
+    displayed_game: ReadSignal<Game>,
+    /// The game state that is displayed when hovering over a cell.
+    /// Shows the game state after a potential play is made.
+    ghost_game: ReadSignal<Option<Game>>,
+    /// The cell that is currently being hovered over.
+    hovered_cell: Signal<Option<(u8, u8)>>,
+    /// The history item that is currently being hovered over.
+    hovered_history: Signal<Option<(Game, Play)>>,
+    /// The history of the game, including the game state and the play that was made.
+    /// The game state should be the state of the game _before_ the play was made.
+    game_history: Signal<Vec<(Game, Play)>>,
     player_1: Signal<Agent>,
     player_2: Signal<Agent>,
-    ghost_game: ReadSignal<Option<Game>>,
-    hovered_cell: Signal<Option<(u8, u8)>>,
 }
 
 #[component]
 fn App() -> View {
-    let game = create_signal(Game::new());
-
     let hovered_cell = create_signal(None::<(u8, u8)>);
+    let hovered_history = create_signal(None);
+
+    let game = create_signal(Game::new());
+    let displayed_game = create_memo(move || {
+        if let Some((state, _)) = hovered_history.get() {
+            state
+        } else {
+            game.get()
+        }
+    });
     let ghost_game = create_memo(move || {
         if let Some((row, col)) = hovered_cell.get() {
             let mut ghost_game = game.get();
@@ -56,18 +76,46 @@ fn App() -> View {
             }
 
             Some(ghost_game)
+        } else if let Some((state, play)) = hovered_history.get() {
+            let mut ghost_game = state;
+            ghost_game.make_play(play);
+
+            Some(ghost_game)
         } else {
             None
         }
     });
 
+    let game_history = create_signal(Vec::new());
+
     let player_1 = create_signal(Agent::Human);
     let player_2 = create_signal(Agent::Human);
+
+    let state = AppState {
+        game,
+        displayed_game,
+        ghost_game,
+        hovered_cell,
+        hovered_history,
+        game_history,
+        player_1,
+        player_2,
+    };
+
+    provide_context(state);
 
     // Run the current player's turn.
     // If the current player is a computer, it will make a move automatically.
     // If the current player is a human, it will wait for the human to make a move.
-    fn _run_player_turn(game: Signal<Game>, player_1: Signal<Agent>, player_2: Signal<Agent>) {
+    fn _run_player_turn(
+        state @ AppState {
+            game,
+            game_history,
+            player_1,
+            player_2,
+            ..
+        }: AppState,
+    ) {
         let mut game_value = game.get();
 
         if game_value.game_state() != Player::InProgress {
@@ -81,17 +129,18 @@ fn App() -> View {
         };
 
         if let Some(play) = get_move_for_agent(current_player, game_value) {
+            game_history.update(|history| history.push((game_value, play)));
             game_value.make_play(play);
             game.set(game_value);
 
             // Trigger the next player's turn after the current player has made a move.
-            let closure = Closure::once_into_js(move || _run_player_turn(game, player_1, player_2));
+            let closure = Closure::once_into_js(move || _run_player_turn(state));
             window().request_animation_frame(&closure.into()).unwrap();
         }
     }
 
     let run_player_turn = move || {
-        let closure = Closure::once_into_js(move || _run_player_turn(game, player_1, player_2));
+        let closure = Closure::once_into_js(move || _run_player_turn(state));
         window().request_animation_frame(&closure.into()).unwrap();
     };
 
@@ -100,20 +149,13 @@ fn App() -> View {
         let play = Play::new(row, col);
 
         if game_value.is_valid_play(play) {
+            game_history.update(|history| history.push((game_value, play)));
             game_value.make_play(play);
             game.set(game_value);
 
             run_player_turn();
         }
     };
-
-    provide_context(AppState {
-        game,
-        player_1,
-        player_2,
-        ghost_game,
-        hovered_cell,
-    });
 
     view! {
         div(class="mx-auto my-4 max-w-prose") {
@@ -128,6 +170,7 @@ fn App() -> View {
             div(class="flex flex-row justify-around") {
                 button(class="rounded px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 transition-colors", on:click=move |_| {
                     game.set(Game::new());
+                    game_history.set(Vec::new());
                     run_player_turn();
                 }) { "New Game" }
             }
@@ -149,7 +192,34 @@ fn App() -> View {
                 }
             }
 
-            GameBoard(onclick=onclick)
+            div(class="flex flex-row") {
+                GameBoard(onclick=onclick)
+                ul(class="w-30 h-128 overflow-y-auto py-2 px-4") {
+                    Indexed(
+                        list=move || game_history.get_clone().into_iter().rev().collect::<Vec<_>>(),
+                        view=move |(state, play)| {
+                            view! {
+                                li(
+                                    class="cursor-default even:bg-gray-100 hover:even:bg-gray-200 odd:bg-white hover:odd:bg-gray-50",
+                                    on:mouseover=move |_| {
+                                        hovered_history.set(Some((state, play)));
+                                    },
+                                    on:mouseout=move |_| {
+                                        hovered_history.set(None);
+                                    }
+                                ) {
+                                    (if state.player_to_move == Player::Black {
+                                        "B: "
+                                    } else {
+                                        "W: "
+                                    })
+                                    (format!("{play}"))
+                                }
+                            }
+                        }
+                    )
+                }
+            }
 
             div(class="text-sm text-gray-500 mt-10") {
                 p {
@@ -230,6 +300,7 @@ fn GameBoard(onclick: impl Fn(u8, u8) + Copy + 'static) -> View {
 fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
     let AppState {
         game,
+        displayed_game,
         ghost_game,
         hovered_cell,
         ..
@@ -237,8 +308,8 @@ fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
 
     let play = Play::new(row, col);
 
-    let cell_state = move || game.get().cell_state(row, col);
-    let is_valid_play = move || game.get().is_valid_play(play);
+    let cell_state = move || displayed_game.get().cell_state(row, col);
+    let is_valid_play = move || displayed_game.get().is_valid_play(play);
 
     let ghost_cell_state = move || {
         ghost_game

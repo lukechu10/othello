@@ -14,7 +14,7 @@ pub enum Cell {
 }
 
 /// Represents the current state of the game.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Player {
     Black,
     White,
@@ -23,7 +23,7 @@ pub enum Player {
 }
 
 /// Represents an Othello game board.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Game {
     pub black_pieces: Bitfield,
     pub white_pieces: Bitfield,
