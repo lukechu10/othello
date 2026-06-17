@@ -37,8 +37,8 @@ impl Game {
     /// Creates a new blank game board.
     pub fn new() -> Self {
         Self {
-            black_pieces: Bitfield((1 << Play::new(3, 3).0) | (1 << Play::new(4, 4).0)),
-            white_pieces: Bitfield((1 << Play::new(3, 4).0) | (1 << Play::new(4, 3).0)),
+            black_pieces: Bitfield((1 << Play::new(3, 4).0) | (1 << Play::new(4, 3).0)),
+            white_pieces: Bitfield((1 << Play::new(3, 3).0) | (1 << Play::new(4, 4).0)),
             player_to_move: Player::Black,
             previous_move: Play(0),
         }
