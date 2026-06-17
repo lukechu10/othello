@@ -1,6 +1,8 @@
 use crate::othello::{Game, Play, Player};
 
 pub mod mcts;
+pub mod minimax;
+pub mod random;
 
 pub trait Agent {
     /// Returns the best move for the current player given the current game state.
@@ -39,6 +41,29 @@ impl Matchup {
                 self.agent_black.best_move(game)
             } else {
                 self.agent_white.best_move(game)
+            };
+            if !game.is_valid_play(play) {
+                panic!(
+                    "Invalid play {:?} by player {:?}",
+                    play, game.player_to_move
+                );
+            }
+            game.make_play(play);
+        }
+
+        game.game_state()
+    }
+
+    pub fn play_with_time_budget(&mut self, time_budget_ms: u64) -> Player {
+        let mut game = Game::new();
+
+        while game.game_state() == Player::InProgress {
+            let play = if game.player_to_move == Player::Black {
+                self.agent_black
+                    .best_move_with_time_budget(game, time_budget_ms)
+            } else {
+                self.agent_white
+                    .best_move_with_time_budget(game, time_budget_ms)
             };
             game.make_play(play);
         }

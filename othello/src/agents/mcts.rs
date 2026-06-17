@@ -286,6 +286,7 @@ impl Mcts {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MctsAgent {
     pub max_iterations: u32,
 }
@@ -294,7 +295,6 @@ impl Agent for MctsAgent {
     fn best_move(&mut self, game: Game) -> Play {
         let mut mcts = Mcts::new(game, self.max_iterations);
         let search_res = mcts.run_search_iterations_budget(self.max_iterations);
-        println!("MCTS: {} games simulated", search_res.search_iterations);
 
         mcts.best_play()
     }
@@ -302,7 +302,6 @@ impl Agent for MctsAgent {
     fn best_move_with_time_budget(&mut self, game: Game, time_budget_ms: u64) -> Play {
         let mut mcts = Mcts::new(game, self.max_iterations);
         let search_res = mcts.run_search_time_budget(time_budget_ms as u128);
-        println!("MCTS: {} games simulated", search_res.search_iterations);
 
         mcts.best_play()
     }
