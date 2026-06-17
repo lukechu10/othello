@@ -31,6 +31,10 @@ pub struct Game {
     /// Next player to move
     pub player_to_move: Player,
     pub previous_move: Play,
+
+    /// Whether the previous player had to skip their turn.
+    /// If true and the current player also has no valid moves, the game is over.
+    pub skip_turn: bool,
 }
 
 impl Game {
@@ -41,6 +45,7 @@ impl Game {
             white_pieces: Bitfield((1 << Play::new(3, 3).0) | (1 << Play::new(4, 4).0)),
             player_to_move: Player::Black,
             previous_move: Play(0),
+            skip_turn: false,
         }
     }
 
@@ -159,6 +164,7 @@ impl Game {
         } else {
             Bitfield(1 << play.0)
         };
+        self.skip_turn = play.0 == 64; // If the player has to skip their turn, set skip_turn to true
         let mut captured_disks: u64 = 0;
 
         debug_assert!(play.0 < 65, "move must be within the board"); // 64 is "skip" turn
@@ -236,9 +242,27 @@ impl Game {
     /// Computes the game state.
     pub fn game_state(&self) -> Player {
         if !(self.black_pieces.0 | self.white_pieces.0) != 0 {
-            Player::InProgress
+            if self.skip_turn {
+                // Check if the current player has any valid moves
+                if self.generate_plays()[0].0 == 64 {
+                    // If the current player also has no valid moves, the game is over
+                    // Count the number of pieces of each color
+                    let black_count = self.black_pieces.0.count_ones();
+                    let white_count = self.white_pieces.0.count_ones();
+
+                    match black_count.cmp(&white_count) {
+                        Ordering::Less => Player::White,
+                        Ordering::Equal => Player::Tie,
+                        Ordering::Greater => Player::Black,
+                    }
+                } else {
+                    Player::InProgress
+                }
+            } else {
+                Player::InProgress
+            }
         } else {
-            // count number of pieces of each color
+            // Count number of pieces of each color
             let black_count = self.black_pieces.0.count_ones();
             let white_count = self.white_pieces.0.count_ones();
 

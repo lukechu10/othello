@@ -1,6 +1,5 @@
 use crate::othello::{Game, Play, Player};
 use rand::prelude::*;
-use std::cmp::Ordering;
 use web_time::Instant;
 
 /// Represents a node in the MCTS Tree.
@@ -176,21 +175,6 @@ impl Mcts {
             let play = plays[rand_index];
 
             state.make_play(play);
-
-            if play.0 == 64 {
-                // check if other player has a move, if false, return Player::Tie
-                if state.generate_plays()[0].0 == 64 {
-                    // count number of pieces of each color
-                    let black_count = state.black_pieces.0.count_ones();
-                    let white_count = state.white_pieces.0.count_ones();
-
-                    return match black_count.cmp(&white_count) {
-                        Ordering::Less => Player::White,
-                        Ordering::Equal => Player::Tie,
-                        Ordering::Greater => Player::Black,
-                    };
-                }
-            }
         }
 
         state.game_state()
