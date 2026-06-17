@@ -157,11 +157,11 @@ fn App() -> View {
     };
 
     view! {
-        div(class="mx-auto my-4 max-w-prose") {
-            h1(class="text-2xl font-bold") { "Othello" }
+        div(class="mx-6 my-4") {
+            h1(class="text-2xl font-bold text-center") { "Othello" }
 
-            h2(class="text-xl font-bold") { "Players" }
-            div(class="flex flex-row justify-around my-2") {
+            h2(class="text-xl font-bold text-center") { "Players" }
+            div(class="flex flex-row justify-around my-2 mx-auto max-w-prose") {
                 PlayerSelect(player=player_1, label="Player 1 (Black):")
                 PlayerSelect(player=player_2, label="Player 2 (White):")
             }
@@ -191,9 +191,9 @@ fn App() -> View {
                 }
             }
 
-            div(class="flex flex-row") {
+            div(class="flex flex-row place-content-center") {
                 GameBoard(onclick=onclick)
-                ul(class="w-30 h-128 overflow-y-auto py-2 px-4") {
+                ul(class="w-40 h-128 overflow-y-auto py-2 px-4") {
                     Indexed(
                         list=move || game_history.get_clone().into_iter().rev().collect::<Vec<_>>(),
                         view=move |(state, play)| {
@@ -207,12 +207,14 @@ fn App() -> View {
                                         hovered_history.set(None);
                                     }
                                 ) {
-                                    (if state.player_to_move == Player::Black {
-                                        "B: "
-                                    } else {
-                                        "W: "
-                                    })
-                                    (format!("{play}"))
+                                    span(class="font-bold w-8 text-right inline-block") {
+                                        (if state.player_to_move == Player::Black {
+                                            "B:"
+                                        } else {
+                                            "W:"
+                                        })
+                                    }
+                                    " " (play.to_string())
                                 }
                             }
                         }
@@ -220,7 +222,7 @@ fn App() -> View {
                 }
             }
 
-            div(class="text-sm text-gray-500 mt-10") {
+            div(class="text-sm text-gray-500 mt-10 max-w-prose mx-auto") {
                 p {
                     "The computer uses the "
                     a(href="https://en.wikipedia.org/wiki/Monte_Carlo_tree_search", target="_blank", class="text-blue-500 hover:underline") {
@@ -277,20 +279,18 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str) -> View {
 #[component(inline_props)]
 fn GameBoard(onclick: impl Fn(u8, u8) + Copy + 'static) -> View {
     view! {
-        div(class="flex flex-row justify-around") {
-            div {
-                ((0..8).map(move |row| {
-                    view! {
-                        div(class="row h-16") {
-                            ((0..8).map(move |col| {
-                                view! {
-                                    Cell(row=row, col=col,onclick=onclick)
-                                }
-                            }).collect::<Vec<View>>())
-                        }
+        div(class="bg-green-600 px-2 pt-2.5 pb-1 rounded-xl") {
+            ((0..8).map(move |row| {
+                view! {
+                    div(class="row -my-0.5") {
+                        ((0..8).map(move |col| {
+                            view! {
+                                Cell(row=row, col=col,onclick=onclick)
+                            }
+                        }).collect::<Vec<View>>())
                     }
-                }).collect::<Vec<View>>())
-            }
+                }
+            }).collect::<Vec<View>>())
         }
     }
 }
@@ -328,20 +328,6 @@ fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
         hovered_cell.set(None);
     };
 
-    let rounded = move || {
-        if row == 0 && col == 0 {
-            "rounded-tl-lg"
-        } else if row == 0 && col == 7 {
-            "rounded-tr-lg"
-        } else if row == 7 && col == 0 {
-            "rounded-bl-lg"
-        } else if row == 7 && col == 7 {
-            "rounded-br-lg"
-        } else {
-            ""
-        }
-    };
-
     let disc_class = move || match (cell_state(), ghost_cell_state(), is_valid_play()) {
         (Cell::Black, Some(Cell::White), _) => "bg-red-950",
         (Cell::White, Some(Cell::Black), _) => "bg-red-200",
@@ -355,7 +341,7 @@ fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
 
     view! {
         button(
-            class=format!("w-16 h-16 bg-green-700 border-2 border-green-600 {} transition-colors", rounded()),
+            class="w-16 h-16 bg-green-700 border-2 border-green-800/30 rounded-lg mx-0.75",
             on:click=onclick,
             on:mouseover=onmouseover,
             on:mouseout=onmouseout,
