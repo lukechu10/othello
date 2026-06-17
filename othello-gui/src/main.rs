@@ -51,6 +51,7 @@ struct AppState {
     game_history: Signal<Vec<(Game, Play)>>,
     player_1: Signal<Agent>,
     player_2: Signal<Agent>,
+    waiting_for_player_turn: Signal<bool>,
 }
 
 #[component]
@@ -91,6 +92,8 @@ fn App() -> View {
     let player_1 = create_signal(Agent::Human);
     let player_2 = create_signal(Agent::Computer(1000));
 
+    let waiting_for_player_turn = create_signal(true);
+
     let state = AppState {
         game,
         displayed_game,
@@ -100,6 +103,7 @@ fn App() -> View {
         game_history,
         player_1,
         player_2,
+        waiting_for_player_turn,
     };
 
     provide_context(state);
@@ -136,6 +140,8 @@ fn App() -> View {
             // Trigger the next player's turn after the current player has made a move.
             let closure = Closure::once_into_js(move || _run_player_turn(state));
             window().request_animation_frame(&closure.into()).unwrap();
+        } else {
+            state.waiting_for_player_turn.set(true);
         }
     }
 
@@ -147,11 +153,12 @@ fn App() -> View {
         let mut game_value = game.get();
         let play = Play::new(row, col);
 
-        if game_value.is_valid_play(play) {
+        if game_value.is_valid_play(play) && waiting_for_player_turn.get() {
             game_history.update(|history| history.push((game_value, play)));
             game_value.make_play(play);
             game.set(game_value);
 
+            waiting_for_player_turn.set(false);
             run_player_turn();
         }
     };
@@ -170,6 +177,7 @@ fn App() -> View {
                     button(class="flex-none rounded px-4 py-2 bg-slate-900 text-white hover:bg-slate-700 transition-colors grow-0", on:click=move |_| {
                         game.set(Game::new());
                         game_history.set(Vec::new());
+                        waiting_for_player_turn.set(true);
                         run_player_turn();
                     }) { "New Game" }
                 }
