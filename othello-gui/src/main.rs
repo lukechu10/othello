@@ -8,16 +8,16 @@ use web_sys::Event;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Agent {
     Human,
-    Computer(u128),
+    Computer(u32),
     Random,
 }
 
 fn get_move_for_agent(agent: Agent, game: Game) -> Option<Play> {
     match agent {
         Agent::Human => None,
-        Agent::Computer(time_budget) => {
+        Agent::Computer(iterations_budget) => {
             let mut mcts_agent = Mcts::new(game);
-            let search_res = mcts_agent.run_search_time_budget(time_budget);
+            let search_res = mcts_agent.run_search_iterations_budget(iterations_budget);
             web_sys::console::log_1(
                 &format!("{} games simulated", search_res.search_iterations).into(),
             );
@@ -258,9 +258,9 @@ fn PlayerSelect(player: Signal<Agent>, label: &'static str) -> View {
                 let value = e.target().unwrap().unchecked_into::<web_sys::HtmlSelectElement>().value();
                 player.set(match value.as_str() {
                     "Human" => Agent::Human,
-                    "Computer (Easy)" => Agent::Computer(10),
-                    "Computer (Medium)" => Agent::Computer(100),
-                    "Computer (Hard)" => Agent::Computer(1000),
+                    "Computer (Easy)" => Agent::Computer(500),
+                    "Computer (Medium)" => Agent::Computer(1000),
+                    "Computer (Hard)" => Agent::Computer(10000),
                     "Computer (Random)" => Agent::Random,
                     _ => Agent::Human,
                 });
@@ -299,7 +299,6 @@ fn GameBoard(onclick: impl Fn(u8, u8) + Copy + 'static) -> View {
 #[component(inline_props)]
 fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
     let AppState {
-        game,
         displayed_game,
         ghost_game,
         hovered_cell,
@@ -364,7 +363,7 @@ fn Cell(row: u8, col: u8, onclick: impl Fn(u8, u8) + 'static) -> View {
 
     view! {
         button(
-            class=format!("w-16 h-16 {} border border-green-900 {} transition-colors", cell_color(), rounded()),
+            class=format!("w-16 h-16 {} border-2 border-green-600 {} transition-colors", cell_color(), rounded()),
             on:click=onclick,
             on:mouseover=onmouseover,
             on:mouseout=onmouseout,
