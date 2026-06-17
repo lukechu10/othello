@@ -140,8 +140,7 @@ fn App() -> View {
     }
 
     let run_player_turn = move || {
-        let closure = Closure::once_into_js(move || _run_player_turn(state));
-        window().request_animation_frame(&closure.into()).unwrap();
+        gloo_timers::callback::Timeout::new(300, move || _run_player_turn(state)).forget();
     };
 
     let onclick = move |row: u8, col: u8| {
