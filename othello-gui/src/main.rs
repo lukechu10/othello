@@ -153,19 +153,23 @@ fn App() -> View {
 
             div(class="text-sm text-gray-500 mt-10") {
                 p {
-                    "Find the source code at "
-                    a(href="https://github.com/lukechu10/othello", target="_blank", class="text-blue-500 hover:underline") {
-                        "github.com/lukechu10/othello"
+                    "The computer uses the "
+                    a(href="https://en.wikipedia.org/wiki/Monte_Carlo_tree_search", target="_blank", class="text-blue-500 hover:underline") {
+                        "Monte Carlo Tree Search"
                     }
-                    "."
-                }
-                p {
-                    "The computer uses the Monte Carlo Tree Search (MCTS) algorithm to evaluate the best move. "
+                    " (MCTS) algorithm to evaluate the best move. "
                     "The UI is implemented using the "
                     a(href="https://sycamore.dev", target="_blank", class="text-blue-500 hover:underline") {
                         "Sycamore"
                     }
                     " UI library in Rust and WebAssembly."
+                }
+                p {
+                    "Find the source code at "
+                    a(href="https://github.com/lukechu10/othello", target="_blank", class="text-blue-500 hover:underline") {
+                        "github.com/lukechu10/othello"
+                    }
+                    "."
                 }
             }
         }
